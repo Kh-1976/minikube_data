@@ -1,0 +1,59 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: genlogs
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-generator
+  namespace: genlogs
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: log-generator
+  template:
+    metadata:
+      labels:
+        app: log-generator
+    spec:
+      initContainers:
+        - name: download-script
+          image: curlimages/curl:latest
+          command:
+            - sh
+            - -c
+          args:
+            - |
+              curl -L -o /app/gen_logs.py \
+                "https://raw.githubusercontent.com/Kh-1976/scripts/main/gen_logs.py" && \
+              chmod +x /app/gen_logs.py
+          volumeMounts:
+            - name: app-volume
+              mountPath: /app
+      containers:
+        - name: generator
+          image: python:3.12-slim
+          command:
+            - /bin/bash
+            - -c
+          args:
+            - |
+              pip install --no-cache-dir faker confluent-kafka && \
+              python /app/gen_logs.py
+          volumeMounts:
+            - name: app-volume
+              mountPath: /app
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+      volumes:
+        - name: app-volume
+          emptyDir: {}
+      restartPolicy: Always
