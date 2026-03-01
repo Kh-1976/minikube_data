@@ -235,7 +235,8 @@ data:
                 'service': service,
                 'message': message,
                 'host': faker.hostname(),
-                'pid': random.randint(1000, 9999)
+                'pid': os.getpid() 
+                #'pid': random.randint(1000, 9999)
             }
 
             # Отправка в Kafka (key=service для партиционирования)
