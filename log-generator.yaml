@@ -315,6 +315,7 @@ spec:
             - -c
           args:
             - |
+              pip install --upgrade pip && \
               pip install --no-cache-dir faker confluent-kafka && \
               python /app/gen_logs.py
           volumeMounts:
