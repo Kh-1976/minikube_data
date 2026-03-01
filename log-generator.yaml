@@ -28,7 +28,7 @@ spec:
           args:
             - |
               curl -L -o /app/gen_logs.py \
-                "https://raw.githubusercontent.com/Kh-1976/scripts/main/gen_logs.py" && \
+                "https://raw.githubusercontent.com/Kh-1976/scripts/main/gen_logs" && \
               chmod +x /app/gen_logs.py
           volumeMounts:
             - name: app-volume
