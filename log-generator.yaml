@@ -235,7 +235,7 @@ data:
                 'service': service,
                 'message': message,
                 'host': faker.hostname(),
-                'pid': msgid}
+                'pid': random_id}
 
             # Отправка в Kafka (key=service для партиционирования)
             key_bytes = service.encode('utf-8')
