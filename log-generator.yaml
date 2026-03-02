@@ -26,10 +26,13 @@ spec:
             - sh
             - -c
           args:
-            curl -L -o /app/gen_logs.py \
-                   'https://raw.githubusercontent.com/Kh-1976/scripts/main/gen_logs.py' \
-                    && \
-                    chmod +x /app/gen_logs.py
+            - |
+              mkdir -p /app && \
+              curl -L -o /app/gen_logs.py \
+                "https://raw.githubusercontent.com/Kh-1976/scripts/main/gen_logs.py" && \
+              chmod +x /app/gen_logs.py && \
+              echo "Script downloaded successfully" && \
+              ls -la /app/
           volumeMounts:
             - name: app-volume
               mountPath: /app
@@ -42,10 +45,14 @@ spec:
           args:
             - |
               pip install --no-cache-dir faker confluent-kafka && \
+              ls -la /app/ && \
               python /app/gen_logs.py
           volumeMounts:
             - name: app-volume
               mountPath: /app
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
           resources:
             limits:
               cpu: 500m
