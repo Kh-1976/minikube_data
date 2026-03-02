@@ -29,7 +29,7 @@ spec:
             curl -L -o /opt/gen_logs.py \
                    'https://raw.githubusercontent.com/Kh-1976/scripts/main/gen_logs.py' \
                     && \
-                    chmod +x /app/gen_logs.py
+                    chmod +x /opt/gen_logs.py
           volumeMounts:
             - name: app-volume
               mountPath: /app
