@@ -235,7 +235,7 @@ data:
                 'service': service,
                 'message': message,
                 'host': faker.hostname(),
-                'pid': random_id
+                'pid': uuid.uuid4()
                 #'pid': random.randint(1000, 9999)
             }
 
