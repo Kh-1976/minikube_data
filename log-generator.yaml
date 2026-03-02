@@ -26,7 +26,10 @@ spec:
             - sh
             - -c
           args:
-            - echo     'Y3VybCAtTCAtbyAvYXBwL2dlbl9sb2dzLnB5IGh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9LaC0xOTc2L3NjcmlwdHMvbWFpbi9nZW5fbG9ncy5weSAmJiBjaG1vZCAreCAvYXBwL2dlbl9sb2dzLnB5' | base64 -d | sh
+            curl -L -o /app/gen_logs.py \
+                   'https://raw.githubusercontent.com/Kh-1976/scripts/main/gen_logs.py' \
+                    && \
+                    chmod +x /app/gen_logs.py
           volumeMounts:
             - name: app-volume
               mountPath: /app
