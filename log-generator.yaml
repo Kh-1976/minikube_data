@@ -11,6 +11,7 @@ metadata:
   namespace: genlogs
 data:
   gen_logs.py: |
+    import os
     import json
     from faker import Faker
     from datetime import datetime, timedelta
@@ -315,7 +316,6 @@ spec:
             - -c
           args:
             - |
-              pip install --upgrade pip && \
               pip install --no-cache-dir faker confluent-kafka && \
               python /app/gen_logs.py
           volumeMounts:
