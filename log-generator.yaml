@@ -45,14 +45,10 @@ spec:
           args:
             - |
               pip install --no-cache-dir faker confluent-kafka && \
-              ls -la /app/ && \
               python /app/gen_logs.py
           volumeMounts:
             - name: app-volume
               mountPath: /app
-          env:
-            - name: PYTHONUNBUFFERED
-              value: "1"
           resources:
             limits:
               cpu: 500m
