@@ -37,7 +37,7 @@ data:
     for i in KAFKA_TOPIC: 
         if i not in existing_topics:
             print(f"Topic '{i}' not found. Creating...")
-            new_topic = NewTopic(i, num_partitions=3, replication_factor=1)
+            new_topic = NewTopic(i, num_partitions=3, replication_factor=3)
             fs = admin_client.create_topics([new_topic])
 
             for topic, future in fs.items():
