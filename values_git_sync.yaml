@@ -48,6 +48,9 @@ airflow:
     enabled: true
   createUserJob:
     enabled: true
+  #Добавляем эту секцию для установки confluent_kafka в образ Airflow (р для scheduler, workers, webserver и т.д.)
+  extraPipPackages: 
+    - 'confluent-kafka>=2.3.0'
   config:
     CORE__DAGS_FOLDER: '/opt/airflow/dags/repo'  # Ключевой фикс: указываем Airflow сканировать именно туда, куда git-sync кладёт даги (на основе вашего описания)
     # Альтернатива, если после subPath: "" станет /opt/airflow/dags/git или /opt/airflow/dags:
