@@ -1,20 +1,95 @@
-dags:
-  gitSync:
-    enabled: true
-    repo: "https://github.com/Kh-1976/airflow-dags.git"
-    branch: "main"
-    rev: "HEAD"
-    depth: 1
-    period: "1m"
-    subPath: ""
-    resources:
-      requests:
-        cpu: "100m"
-        memory: "128Mi"
-      limits:
-        cpu: "200m"
-        memory: "256Mi"
+# Общие настройки Airflow
+airflow:
+  image:
+    repository: apache/airflow
+    tag: 3.0.2-python3.11  # Убедитесь, что версия соответствует чарту
+    pullPolicy: IfNotPresent
 
+
+  # Включение Git‑Sync для автоматической загрузки DAG‑ов из репозитория
+  dags:
+    gitSync:
+      enabled: true
+      repo: "https://github.com/Kh-1976/airflow-dags.git"  # Ваш репозиторий
+      branch: "main"
+      rev: "HEAD"
+      depth: 1
+      period: "60s"  # Синхронизация каждые 60 секунд
+      subPath: ""  # Если DAG‑и в корне репозитория
+      wait: 0      # Не ждать первую синхронизацию
+      sshKeySecret: ""  # Если нужен SSH (оставьте пустым для HTTPS)
+      containerSecurityContext:
+        runAsUser: 65533  # Пользователь airflow
+        runAsGroup: 65533
+
+  # Установка дополнительных Python‑пакетов через pip
+  extraPipPackages:
+    - "confluent-kafka>=2.4.0"
+    - "faker>=18.0.0"
+    - "requests>=2.31.0"
+
+  # Конфигурация Airflow (переменные окружения)
+  config:
+    AIRFLOW__CORE__DAGS_FOLDER: "/opt/airflow/dags/repo"  # Путь, куда git-sync кладёт DAG‑и
+    AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+    AIRFLOW__CORE__EXECUTOR: "CeleryExecutor"  # Или LocalExecutor, если не используете Celery
+    AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX: "True"
+
+  # Команды запуска для контейнеров (с предварительной установкой пакетов)
+  web:
+    command:
+      - /bin/bash
+      - -c
+      - |
+        pip install --no-cache-dir $(echo $AIRFLOW__CORE__EXTRA_PIP_REQUIREMENTS | tr ',' ' ') && \
+        airflow webserver
+    extraVolumeMounts:
+      - name: dags-volume
+        mountPath: /opt/airflow/dags
+
+
+  scheduler:
+    command:
+      - /bin/bash
+      - -c
+      - |
+        pip install --no-cache-dir $(echo $AIRFLOW__CORE__EXTRA_PIP_REQUIREMENTS | tr ',' ' ') && \
+        airflow scheduler
+    extraVolumeMounts:
+      - name: dags-volume
+        mountPath: /opt/airflow/dags
+
+  workers:
+    replicas: 2
+    command:
+      - /bin/bash
+      - -c
+      - |
+        pip install --no-cache-dir $(echo $AIRFLOW__CORE__EXTRA_PIP_REQUIREMENTS | tr ',' ' ') && \
+        airflow worker
+    extraVolumeMounts:
+      - name: dags-volume
+        mountPath: /opt/airflow/dags
+
+  # Init‑контейнер для установки зависимостей (на всякий случай)
+  initContainers:
+    - name: install-deps
+      image: apache/airflow:3.0.2-python3.11
+      command:
+        - /bin/sh
+        - -c
+        - |
+          pip install --no-cache-dir confluent-kafka faker requests
+      volumeMounts:
+        - name: dags-volume
+          mountPath: /opt/airflow/dags
+
+  # Объёмы для хранения DAG‑ов
+  volumes:
+    - name: dags-volume
+      emptyDir: {}
+
+# Настройка PostgreSQL (встроенный)
 postgresql:
   enabled: true
   image:
@@ -26,7 +101,7 @@ postgresql:
   postgresDatabase: airflow
   persistence:
     enabled: true
-    storageClass: "standard"
+    storageClass: standard
     accessMode: ReadWriteOnce
     size: 8Gi
   service:
@@ -39,60 +114,17 @@ postgresql:
       memory: "512Mi"
       cpu: "500m"
 
-airflow:
-  migrateDatabaseJob:
-    enabled: true
-  createUserJob:
-    enabled: true
+# Ресурсы для контейнеров Airflow
+defaultAirflowPodResources:
+  requests:
+    cpu: "200m"
+    memory: "512Mi"
+  limits:
+    cpu: "500m"
+    memory: "1Gi"
 
-  # Явно указываем установку confluent-kafka при старте контейнеров
-  extraPipPackages:
-    - "confluent-kafka>=2.4.0"  # конкретная версия для стабильности
-    - "faker>=18.0.0"            # если нужны фейковые данные в DAG-ах
-
-  # Дополнительно: убедимся, что пакеты устанавливаются в нужное окружение
-  web:
-    extraVolumeMounts:
-      - name: dags-volume
-        mountPath: /opt/airflow/dags
-    command:
-      - /bin/bash
-      - -c
-      - |
-        pip install --no-cache-dir $(echo $AIRFLOW__CORE__EXTRA_PIP_REQUIREMENTS | tr ',' ' ') && \
-        airflow standalone
-
-  scheduler:
-    extraVolumeMounts:
-      - name: dags-volume
-        mountPath: /opt/airflow/dags
-    command:
-      - /bin/bash
-      - -c
-      - |
-        pip install --no-cache-dir $(echo $AIRFLOW__CORE__EXTRA_PIP_REQUIREMENTS | tr ',' ' ') && \
-        airflow scheduler
-
-  config:
-    CORE__DAGS_FOLDER: '/opt/airflow/dags/repo'
-    CORE__LOAD_EXAMPLES: 'False'
-    CORE__EXECUTOR: 'CeleryExecutor'  # если используете Celery
-    # Дополнительно можно задать EXTRA_PIP_REQUIREMENTS (альтернативный способ)
-    CORE__EXTRA_PIP_REQUIREMENTS: 'confluent-kafka,faker'
-
-  # Опционально: добавить init-контейнер для установки зависимостей
-  initContainers:
-    - name: install-python-deps
-      image: apache/airflow:3.0.2  # укажите актуальный образ
-      command:
-        - /bin/sh
-        - -c
-        - |
-          pip install --no-cache-dir confluent-kafka faker
-      volumeMounts:
-        - name: dags-volume
-          mountPath: /opt/airflow/dags
-
-  volumes:
-    - name: dags-volume
-      emptyDir: {}
+# Логирование и отладка
+log:
+  stdout: true
+  stderr: true
+  stderr: true
