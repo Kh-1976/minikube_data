@@ -48,29 +48,6 @@ airflow:
     enabled: true
   createUserJob:
     enabled: true
-  # Устанавливаем Python пакеты
-  extraPipPackages:
-    - confluent-kafka
-  
-  # Добавляем init-контейнер для установки системных зависимостей librdkafka
-  extraInitContainers: |
-    - name: install-system-deps
-      image: "{{ .Values.images.airflow.repository }}:{{ .Values.images.airflow.tag }}"
-      imagePullPolicy: "{{ .Values.images.airflow.pullPolicy }}"
-      command:
-        - /bin/bash
-        - -c
-      args:
-        - |
-          apt-get update && \
-          apt-get install -y gcc librdkafka-dev && \
-          pip install confluent-kafka faker && \
-          echo "System dependencies installed"
-      securityContext:
-        runAsUser: 0
-      volumeMounts:
-        - name: airflow-python-packages
-          mountPath: /home/airflow/.local
   config:
     CORE__DAGS_FOLDER: '/opt/airflow/dags/repo'  # Ключевой фикс: указываем Airflow сканировать именно туда, куда git-sync кладёт даги
     # Альтернатива, если после subPath: "" станет /opt/airflow/dags/git или /opt/airflow/dags:
