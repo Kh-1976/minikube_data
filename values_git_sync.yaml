@@ -50,7 +50,7 @@ airflow:
     enabled: true
   # Устанавливаем Python пакеты
   extraPipPackages:
-    - pip install confluent-kafka
+    - confluent-kafka
   
   # Добавляем init-контейнер для установки системных зависимостей librdkafka
   extraInitContainers: |
