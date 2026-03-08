@@ -6,7 +6,7 @@ dags:
     rev: "HEAD"
     depth: 1
     period: "1m"
-    subPath: ""  # Синхронизирует корень репозитория (если даги в корне). Если по умолчанию /repo, это может помочь; иначе см. config ниже
+    subPath: ""
     resources:
       requests:
         cpu: "100m"
@@ -49,11 +49,7 @@ airflow:
   createUserJob:
     enabled: true
   extraPipPackages:
-    - --no-cache-dir
-    - confluent-kafka
+    - "confluent-kafka==2.5.0"
+    - "faker==25.0.0"
   config:
-    CORE__DAGS_FOLDER: '/opt/airflow/dags/repo'  # Ключевой фикс: указываем Airflow сканировать именно туда, куда git-sync кладёт даги (на основе вашего описания)
-    # Альтернатива, если после subPath: "" станет /opt/airflow/dags/git или /opt/airflow/dags:
-    # CORE__DAGS_FOLDER: '/opt/airflow/dags/git'
-    # или
-    # CORE__DAGS_FOLDER: '/opt/airflow/dags'
+    CORE__DAGS_FOLDER: '/opt/airflow/dags/repo'
