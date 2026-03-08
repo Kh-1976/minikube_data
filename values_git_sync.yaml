@@ -1,130 +1,56 @@
-# Общие настройки Airflow
-airflow:
-  image:
-    repository: apache/airflow
-    tag: 3.0.2-python3.11  # Убедитесь, что версия соответствует чарту
-    pullPolicy: IfNotPresent
+dags:
+  gitSync:
+    enabled: true
+    repo: "https://github.com/Kh-1976/airflow-dags.git"
+    branch: "main"
+    rev: "HEAD"
+    depth: 1
+    period: "1m"
+    subPath: ""  # Синхронизирует корень репозитория (если даги в корне). Если по умолчанию /repo, это может помочь; иначе см. config ниже
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "200m"
+        memory: "256Mi"
 
-
-  # Включение Git‑Sync для автоматической загрузки DAG‑ов из репозитория
-  dags:
-    gitSync:
-      enabled: true
-      repo: "https://github.com/Kh-1976/airflow-dags.git"  # Ваш репозиторий
-      branch: "main"
-      rev: "HEAD"
-      depth: 1
-      period: "60s"  # Синхронизация каждые 60 секунд
-      subPath: ""  # Если DAG‑и в корне репозитория
-      wait: 0      # Не ждать первую синхронизацию
-      sshKeySecret: ""  # Если нужен SSH (оставьте пустым для HTTPS)
-      containerSecurityContext:
-        runAsUser: 65533  # Пользователь airflow
-        runAsGroup: 65533
-
-  # Установка дополнительных Python‑пакетов через pip
-  extraPipPackages:
-    - "confluent-kafka>=2.4.0"
-    - "faker>=18.0.0"
-    - "requests>=2.31.0"
-
-  # Конфигурация Airflow (переменные окружения)
-  config:
-    AIRFLOW__CORE__DAGS_FOLDER: "/opt/airflow/dags/repo"  # Путь, куда git-sync кладёт DAG‑и
-    AIRFLOW__CORE__LOAD_EXAMPLES: "False"
-    AIRFLOW__CORE__EXECUTOR: "CeleryExecutor"  # Или LocalExecutor, если не используете Celery
-    AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX: "True"
-
-  # Команды запуска для контейнеров (с предварительной установкой пакетов)
-  web:
-    command:
-      - /bin/bash
-      - -c
-      - |
-        pip install --no-cache-dir $(echo $AIRFLOW__CORE__EXTRA_PIP_REQUIREMENTS | tr ',' ' ') && \
-        airflow webserver
-    extraVolumeMounts:
-      - name: dags-volume
-        mountPath: /opt/airflow/dags
-
-
-  scheduler:
-    command:
-      - /bin/bash
-      - -c
-      - |
-        pip install --no-cache-dir $(echo $AIRFLOW__CORE__EXTRA_PIP_REQUIREMENTS | tr ',' ' ') && \
-        airflow scheduler
-    extraVolumeMounts:
-      - name: dags-volume
-        mountPath: /opt/airflow/dags
-
-  workers:
-    replicas: 2
-    command:
-      - /bin/bash
-      - -c
-      - |
-        pip install --no-cache-dir $(echo $AIRFLOW__CORE__EXTRA_PIP_REQUIREMENTS | tr ',' ' ') && \
-        airflow worker
-    extraVolumeMounts:
-      - name: dags-volume
-        mountPath: /opt/airflow/dags
-
-  # Init‑контейнер для установки зависимостей (на всякий случай)
-  initContainers:
-    - name: install-deps
-      image: apache/airflow:3.0.2-python3.11
-      command:
-        - /bin/sh
-        - -c
-        - |
-          pip install --no-cache-dir confluent-kafka faker requests
-      volumeMounts:
-        - name: dags-volume
-          mountPath: /opt/airflow/dags
-
-  # Объёмы для хранения DAG‑ов
-  volumes:
-    - name: dags-volume
-      emptyDir: {}
-
-# Настройка PostgreSQL (встроенный)
 postgresql:
   enabled: true
   image:
     repository: postgres
     tag: "16"
     pullPolicy: IfNotPresent
+  
   postgresUser: airflow
   postgresPassword: airflow
   postgresDatabase: airflow
+  
   persistence:
     enabled: true
-    storageClass: standard
+    storageClass: "standard"
     accessMode: ReadWriteOnce
     size: 8Gi
+  
   service:
     port: 5432
+  
   resources:
     requests:
       memory: "256Mi"
       cpu: "250m"
     limits:
       memory: "512Mi"
-      cpu: "500m"
-
-# Ресурсы для контейнеров Airflow
-defaultAirflowPodResources:
-  requests:
-    cpu: "200m"
-    memory: "512Mi"
-  limits:
-    cpu: "500m"
-    memory: "1Gi"
-
-# Логирование и отладка
-log:
-  stdout: true
-  stderr: true
-  stderr: true
+      cpu: "500m" 
+#Миграции и указание директории в ПОДах для DAGs, чтобы Airflow их увидел
+airflow:
+  migrateDatabaseJob:
+    enabled: true
+  createUserJob:
+    enabled: true
+  config:
+    CORE__DAGS_FOLDER: '/opt/airflow/dags/repo'  # Ключевой фикс: указываем Airflow сканировать именно туда, куда git-sync кладёт даги
+    # Альтернатива, если после subPath: "" станет /opt/airflow/dags/git или /opt/airflow/dags:
+    # CORE__DAGS_FOLDER: '/opt/airflow/dags/git'
+    # или
+    # CORE__DAGS_FOLDER: '/opt/airflow/dags'
