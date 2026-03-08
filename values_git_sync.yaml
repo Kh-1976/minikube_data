@@ -44,12 +44,92 @@ postgresql:
       cpu: "500m" 
 
 airflow:
+  # ✅ УДАЛЕН extraPipPackages - используем initContainers
   migrateDatabaseJob:
     enabled: true
   createUserJob:
     enabled: true
-  extraPipPackages:
-    - "confluent-kafka==2.5.0"
-    - "faker==25.0.0"
+  
+  # Общие volumes для всех компонентов
+  extraVolumes:
+    - name: pip-cache
+      emptyDir:
+        medium: Memory  # Кэш в памяти для скорости
+        sizeLimit: 512Mi
+  
+  # Общие volumeMounts для всех компонентов
+  extraVolumeMounts:
+    - name: pip-cache
+      mountPath: /pip-cache
+  
   config:
     CORE__DAGS_FOLDER: '/opt/airflow/dags/repo'
+
+  # Scheduler с initContainers
+  scheduler:
+    initContainers:
+      - name: install-python-packages
+        image: python:3.12-slim
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            pip install --no-cache-dir --upgrade pip && \
+            pip install --no-cache-dir confluent-kafka==2.5.0 faker==25.0.0 && \
+            echo "✅ confluent-kafka и faker установлены" && \
+            python -c "import confluent_kafka; print('✅ confluent_kafka импортируется')" || exit 1
+        volumeMounts:
+          - name: pip-cache
+            mountPath: /pip-cache
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 300m
+            memory: 256Mi
+
+  # Webserver с initContainers  
+  webserver:
+    initContainers:
+      - name: install-python-packages
+        image: python:3.12-slim
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            pip install --no-cache-dir --upgrade pip && \
+            pip install --no-cache-dir confluent-kafka==2.5.0 faker==25.0.0 && \
+            echo "✅ confluent-kafka и faker установлены" && \
+            python -c "import confluent_kafka; print('✅ confluent_kafka импортируется')" || exit 1
+        volumeMounts:
+          - name: pip-cache
+            mountPath: /pip-cache
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 300m
+            memory: 256Mi
+
+  # Workers с initContainers
+  workers:
+    initContainers:
+      - name: install-python-packages
+        image: python:3.12-slim
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            pip install --no-cache-dir --upgrade pip && \
+            pip install --no-cache-dir confluent-kafka==2.5.0 faker==25.0.0 && \
+            echo "✅ confluent-kafka и faker установлены" && \
+            python -c "import confluent_kafka; print('✅ confluent_kafka импортируется')" || exit 1
+        volumeMounts:
+          - name: pip-cache
+            mountPath: /pip-cache
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 300m
+            memory: 256Mi
