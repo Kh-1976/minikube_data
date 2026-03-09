@@ -10,19 +10,19 @@ DAG_POD=$(minikube kubectl -- get pods -n airflow -l component=dag-processor -o 
 TRIGGER_POD=$(minikube kubectl -- get pods -n airflow -l component=triggerer -o jsonpath="{.items[0].metadata.name}")
 
 echo "Installing packages in scheduler pod: $SCHEDULER_NAME"
-# Устанавливаем пакеты в scheduler
-minikube kubectl -- exec -it $SCHEDULER_NAME -n airflow -- /bin/bash -c "pip install --upgrade pip && pip install confluent-kafka kafka-python faker"
+# Устанавливаем пакеты в scheduler (без -it)
+minikube kubectl -- exec $SCHEDULER_NAME -n airflow -- /bin/bash -c "pip install --upgrade pip && pip install confluent-kafka kafka-python faker"
 
 echo "Installing packages in worker pod: $WORKER_POD"
-# Устанавливаем пакеты в worker
-minikube kubectl -- exec -it $WORKER_POD -n airflow -- /bin/bash -c "pip install --upgrade pip && pip install confluent-kafka kafka-python faker"
+# Устанавливаем пакеты в worker (без -it)
+minikube kubectl -- exec $WORKER_POD -n airflow -- /bin/bash -c "pip install --upgrade pip && pip install confluent-kafka kafka-python faker"
 
-echo "Installing packages in worker pod: $DAG_POD"
-# Устанавливаем пакеты в worker
-minikube kubectl -- exec -it $DAG_POD -n airflow -- /bin/bash -c "pip install --upgrade pip && pip install confluent-kafka kafka-python faker"
+echo "Installing packages in dag-processor pod: $DAG_POD"
+# Устанавливаем пакеты в dag-processor (без -it)
+minikube kubectl -- exec $DAG_POD -n airflow -- /bin/bash -c "pip install --upgrade pip && pip install confluent-kafka kafka-python faker"
 
-echo "Installing packages in worker pod: $TRIGGER_POD"
-# Устанавливаем пакеты в worker
-minikube kubectl -- exec -it $TRIGGER_POD -n airflow -- /bin/bash -c "pip install --upgrade pip && pip install confluent-kafka kafka-python faker"
+echo "Installing packages in triggerer pod: $TRIGGER_POD"
+# Устанавливаем пакеты в triggerer (без -it)
+minikube kubectl -- exec $TRIGGER_POD -n airflow -- /bin/bash -c "pip install --upgrade pip && pip install confluent-kafka kafka-python faker"
 
 echo "All packages installed successfully!"
