@@ -48,13 +48,15 @@ airflow:
     enabled: true
   createUserJob:
     enabled: true
-  extraPipPackages:
-    scheduler:
-      extraPipPackages:
-        - "confluent-kafka==2.5.0"
   config:
-    CORE__DAGS_FOLDER: '/opt/airflow/dags/repo'  # Ключевой фикс: указываем Airflow сканировать именно туда, куда git-sync кладёт даги
-    # Альтернатива, если после subPath: "" станет /opt/airflow/dags/git или /opt/airflow/dags:
-    # CORE__DAGS_FOLDER: '/opt/airflow/dags/git'
-    # или
-    # CORE__DAGS_FOLDER: '/opt/airflow/dags'
+    CORE__DAGS_FOLDER: '/opt/airflow/dags/repo'
+
+scheduler:
+  extraPipPackages:
+    - "confluent-kafka==2.5.0"
+worker:
+  extraPipPackages:
+    - "confluent-kafka==2.5.0"
+dagProcessor:
+  extraPipPackages:
+    - "confluent-kafka==2.5.0"
