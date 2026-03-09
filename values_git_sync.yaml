@@ -47,19 +47,22 @@ airflow:
   config:
     CORE__DAGS_FOLDER: '/opt/airflow/dags/repo'
 
-# ✅ ИНИТКОНТЕЙНЕРЫ — работают ВЕЗДЕ без схемы!
+# ✅ ПРАВИЛЬНО: extraInitContainers + extraVolumes
 scheduler:
-  initContainers:
+  extraInitContainers:
     - name: install-python-packages
-      image: apache/airflow:3.1.7-python3.11  # ваша версия
+      image: apache/airflow:3.1.7-python3.11
       command: ["/bin/bash", "-c"]
       args:
         - |
-          pip install --no-cache-dir confluent-kafka==2.5.0 &&
-          chown -R airflow:0 /usr/local/airflow/.local
-      volumeMounts:
-        - name: pip-cache
-          mountPath: /usr/local/airflow/.local
+          pip install --no-cache-dir confluent-kafka==2.5.0
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+        limits:
+          cpu: "200m"
+          memory: "256Mi"
   extraVolumes:
     - name: pip-cache
       emptyDir: {}
@@ -68,17 +71,17 @@ scheduler:
       mountPath: /usr/local/airflow/.local
 
 worker:
-  initContainers:
+  extraInitContainers:
     - name: install-python-packages
       image: apache/airflow:3.1.7-python3.11
       command: ["/bin/bash", "-c"]
       args:
         - |
-          pip install --no-cache-dir confluent-kafka==2.5.0 &&
-          chown -R airflow:0 /usr/local/airflow/.local
-      volumeMounts:
-        - name: pip-cache
-          mountPath: /usr/local/airflow/.local
+          pip install --no-cache-dir confluent-kafka==2.5.0
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
   extraVolumes:
     - name: pip-cache
       emptyDir: {}
