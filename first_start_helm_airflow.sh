@@ -1,5 +1,11 @@
 #!/bin/bash
 
+echo "=== Запуск Minikube ==="
+minikube start \
+  --driver=docker \
+  --cpus=4 \
+  --memory=8192
+
 echo "=== Обновление репозитория Apache Airflow ==="
 helm repo update
 
