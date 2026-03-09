@@ -6,7 +6,7 @@ dags:
     rev: "HEAD"
     depth: 1
     period: "1m"
-    subPath: ""  # Синхронизирует корень репозитория (если даги в корне). Если по умолчанию /repo, это может помочь; иначе см. config ниже
+    subPath: ""
     resources:
       requests:
         cpu: "100m"
@@ -21,20 +21,16 @@ postgresql:
     repository: postgres
     tag: "16"
     pullPolicy: IfNotPresent
-  
   postgresUser: airflow
   postgresPassword: airflow
   postgresDatabase: airflow
-  
   persistence:
     enabled: true
     storageClass: "standard"
     accessMode: ReadWriteOnce
     size: 8Gi
-  
   service:
     port: 5432
-  
   resources:
     requests:
       memory: "256Mi"
@@ -42,7 +38,7 @@ postgresql:
     limits:
       memory: "512Mi"
       cpu: "500m" 
-#Миграции и указание директории в ПОДах для DAGs, чтобы Airflow их увидел
+
 airflow:
   migrateDatabaseJob:
     enabled: true
@@ -51,12 +47,41 @@ airflow:
   config:
     CORE__DAGS_FOLDER: '/opt/airflow/dags/repo'
 
+# ✅ ИНИТКОНТЕЙНЕРЫ — работают ВЕЗДЕ без схемы!
 scheduler:
-  extraPipPackages:
-    - "confluent-kafka==2.5.0"
+  initContainers:
+    - name: install-python-packages
+      image: apache/airflow:3.1.7-python3.11  # ваша версия
+      command: ["/bin/bash", "-c"]
+      args:
+        - |
+          pip install --no-cache-dir confluent-kafka==2.5.0 &&
+          chown -R airflow:0 /usr/local/airflow/.local
+      volumeMounts:
+        - name: pip-cache
+          mountPath: /usr/local/airflow/.local
+  extraVolumes:
+    - name: pip-cache
+      emptyDir: {}
+  extraVolumeMounts:
+    - name: pip-cache
+      mountPath: /usr/local/airflow/.local
+
 worker:
-  extraPipPackages:
-    - "confluent-kafka==2.5.0"
-dagProcessor:
-  extraPipPackages:
-    - "confluent-kafka==2.5.0"
+  initContainers:
+    - name: install-python-packages
+      image: apache/airflow:3.1.7-python3.11
+      command: ["/bin/bash", "-c"]
+      args:
+        - |
+          pip install --no-cache-dir confluent-kafka==2.5.0 &&
+          chown -R airflow:0 /usr/local/airflow/.local
+      volumeMounts:
+        - name: pip-cache
+          mountPath: /usr/local/airflow/.local
+  extraVolumes:
+    - name: pip-cache
+      emptyDir: {}
+  extraVolumeMounts:
+    - name: pip-cache
+      mountPath: /usr/local/airflow/.local
