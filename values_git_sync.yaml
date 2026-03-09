@@ -6,7 +6,7 @@ dags:
     rev: "HEAD"
     depth: 1
     period: "1m"
-    subPath: ""
+    subPath: ""  # Синхронизирует корень репозитория (если даги в корне). Если по умолчанию /repo, это может помочь; иначе см. config ниже
     resources:
       requests:
         cpu: "100m"
@@ -21,16 +21,20 @@ postgresql:
     repository: postgres
     tag: "16"
     pullPolicy: IfNotPresent
+  
   postgresUser: airflow
   postgresPassword: airflow
   postgresDatabase: airflow
+  
   persistence:
     enabled: true
     storageClass: "standard"
     accessMode: ReadWriteOnce
     size: 8Gi
+  
   service:
     port: 5432
+  
   resources:
     requests:
       memory: "256Mi"
@@ -38,7 +42,7 @@ postgresql:
     limits:
       memory: "512Mi"
       cpu: "500m" 
-
+#Миграции и указание директории в ПОДах для DAGs, чтобы Airflow их увидел
 airflow:
   migrateDatabaseJob:
     enabled: true
@@ -46,45 +50,6 @@ airflow:
     enabled: true
   config:
     CORE__DAGS_FOLDER: '/opt/airflow/dags/repo'
-
-# ✅ ПРАВИЛЬНО: extraInitContainers + extraVolumes
-scheduler:
-  extraInitContainers:
-    - name: install-python-packages
-      image: apache/airflow:3.1.7-python3.11
-      command: ["/bin/bash", "-c"]
-      args:
-        - |
-          pip install --no-cache-dir confluent-kafka==2.5.0
-      resources:
-        requests:
-          cpu: "100m"
-          memory: "128Mi"
-        limits:
-          cpu: "200m"
-          memory: "256Mi"
-  extraVolumes:
-    - name: pip-cache
-      emptyDir: {}
-  extraVolumeMounts:
-    - name: pip-cache
-      mountPath: /usr/local/airflow/.local
-
-worker:
-  extraInitContainers:
-    - name: install-python-packages
-      image: apache/airflow:3.1.7-python3.11
-      command: ["/bin/bash", "-c"]
-      args:
-        - |
-          pip install --no-cache-dir confluent-kafka==2.5.0
-      resources:
-        requests:
-          cpu: "100m"
-          memory: "128Mi"
-  extraVolumes:
-    - name: pip-cache
-      emptyDir: {}
-  extraVolumeMounts:
-    - name: pip-cache
-      mountPath: /usr/local/airflow/.local
+  scheduler:
+    extraPipPackages:
+      - "confluent-kafka==2.5.0"
