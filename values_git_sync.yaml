@@ -6,7 +6,7 @@ dags:
     rev: "HEAD"
     depth: 1
     period: "1m"
-    subPath: ""  # Синхронизирует корень репозитория (если даги в корне). Если по умолчанию /repo, это может помочь; иначе см. config ниже
+    subPath: ""
     resources:
       requests:
         cpu: "100m"
@@ -41,8 +41,8 @@ postgresql:
       cpu: "250m"
     limits:
       memory: "512Mi"
-      cpu: "500m" 
-#Миграции и указание директории в ПОДах для DAGs, чтобы Airflow их увидел
+      cpu: "500m"
+
 airflow:
   migrateDatabaseJob:
     enabled: true
@@ -50,6 +50,34 @@ airflow:
     enabled: true
   config:
     CORE__DAGS_FOLDER: '/opt/airflow/dags/repo'
-  scheduler:
-    extraPipPackages:
-      - "confluent-kafka==2.5.0"
+  
+  # Добавляем дополнительные контейнеры для установки пакетов
+  extraContainers:
+    - name: install-packages
+      image: apache/airflow:3.1.7
+      command: 
+        - /bin/bash
+        - -c
+        - |
+          pip install confluent-kafka && \
+          pip install kafka-python && \
+          echo "Packages installed successfully"
+      volumeMounts:
+        - name: airflow-home
+          mountPath: /opt/airflow
+  
+  # Для worker пода тоже нужна установка
+  workers:
+    extraContainers:
+      - name: install-packages
+        image: apache/airflow:3.1.7
+        command:
+          - /bin/bash
+          - -c
+          - |
+            pip install confluent-kafka && \
+            pip install kafka-python && \
+            echo "Packages installed successfully"
+        volumeMounts:
+          - name: airflow-home
+            mountPath: /opt/airflow
