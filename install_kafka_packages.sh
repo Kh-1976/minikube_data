@@ -9,25 +9,20 @@ DAG_POD=$(minikube kubectl -- get pods -n airflow -l component=dag-processor -o 
 # Получаем имя пода triggerer
 TRIGGER_POD=$(minikube kubectl -- get pods -n airflow -l component=triggerer -o jsonpath="{.items[0].metadata.name}")
 
-# Функция для установки пакетов в под
-install_packages() {
-    local pod_name=$1
-    local pod_type=$2
-    
-    echo "Installing packages in $pod_type pod: $pod_name"
-    minikube kubectl -- exec -i $pod_name -n airflow -- /bin/bash -c "
-        echo 'Upgrading pip...' &&
-        pip install --upgrade pip &&
-        echo 'Installing required packages...' &&
-        pip install confluent-kafka kafka-python faker &&
-        echo 'Package installation completed in $pod_type pod'
-    "
-}
+echo "Installing packages in scheduler pod: $SCHEDULER_NAME"
+# Устанавливаем пакеты в scheduler
+minikube kubectl -- exec -it $SCHEDULER_NAME -n airflow -- /bin/bash -c "pip install --upgrade pip && pip install confluent-kafka kafka-python faker"
 
-# Устанавливаем пакеты во все поды
-install_packages "$SCHEDULER_NAME" "scheduler"
-install_packages "$WORKER_POD" "worker"
-install_packages "$DAG_POD" "dag-processor"
-install_packages "$TRIGGER_POD" "triggerer"
+echo "Installing packages in worker pod: $WORKER_POD"
+# Устанавливаем пакеты в worker
+minikube kubectl -- exec -it $WORKER_POD -n airflow -- /bin/bash -c "pip install --upgrade pip && pip install confluent-kafka kafka-python faker"
 
-echo "All packages installed successfully in all pods!"
+echo "Installing packages in worker pod: $DAG_POD"
+# Устанавливаем пакеты в worker
+minikube kubectl -- exec -it $DAG_POD -n airflow -- /bin/bash -c "pip install --upgrade pip && pip install confluent-kafka kafka-python faker"
+
+echo "Installing packages in worker pod: $TRIGGER_POD"
+# Устанавливаем пакеты в worker
+minikube kubectl -- exec -it $TRIGGER_POD -n airflow -- /bin/bash -c "pip install --upgrade pip && pip install confluent-kafka kafka-python faker"
+
+echo "All packages installed successfully!"
