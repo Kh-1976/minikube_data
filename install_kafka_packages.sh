@@ -15,7 +15,7 @@ install_packages() {
     local pod_type=$2
     
     echo "Installing packages in $pod_type pod: $pod_name"
-    minikube kubectl -- exec -it $pod_name -n airflow -- /bin/bash -c "
+    minikube kubectl -- exec -i $pod_name -n airflow -- /bin/bash -c "
         echo 'Upgrading pip...' &&
         pip install --upgrade pip &&
         echo 'Installing required packages...' &&
