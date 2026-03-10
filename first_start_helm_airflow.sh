@@ -6,7 +6,8 @@ minikube start \
   --cpus=4 \
   --memory=8192
 
-echo "=== Обновление репозитория Apache Airflow ==="
+echo "=== Добавление и обновление репозитория Apache Airflow ==="
+helm repo add apache-airflow https://airflow.apache.org
 helm repo update
 
 echo "=== Установка Airflow через Helm ==="
