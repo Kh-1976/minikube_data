@@ -19,6 +19,10 @@ echo "Ожидание началось: $(date)"
 sleep 420  # 7 минут = 420 секунд
 echo "Ожидание завершено: $(date)"
 
+echo "=== Установка log-generator ==="
+minikube kubectl apply -- \
+  -f https://raw.githubusercontent.com/Kh-1976/minikube_data/main/log-generator.yaml
+
 echo "=== Запуск скрипта install_kafka_packages.sh ==="
 # Загружаем и запускаем скрипт установки Kafka пакетов
 curl -s https://raw.githubusercontent.com/Kh-1976/minikube_data/main/install_kafka_packages.sh | bash
